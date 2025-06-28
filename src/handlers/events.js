@@ -11,29 +11,24 @@ module.exports = EventsHandler = async (event, client) => {
 
         const messages = {
             add: [
-                `╭━━━⊱ *Welcome Aboard!* ⊰━━━╮\n` +
-                `┃  ✨ *Group:* ${groupName}\n` +
-                `┃  📜 *About:* ${groupDesc}\n` +
-                `┃  ⚠️ Follow the rules & vibe with us!\n` +
-                `╰━━⊱ *Welcome:* ${userTags} ⊰━━╯`,
+                `╭━━⊱ *Welcome Aboard!* ⊰━━╮\n` +
+                `  ✨ *Group:* ${groupName}\n` +
+                `  📜 *About:* ${groupDesc}\n\n` +
+                `  🗽 *Welcome:* ${userTags}`,
             ],
             remove: [
-                `╭✄──────╮\n` +
-                `┃ 👋 So long, ${user}...\n` +
-                `┃ 🧹 One less soul in the void\n` +
-                `╰────────╯`,
+                
+                `┃ 👋 So long, ${user}... we probably wont miss you`,
             ],
             demote: [
-                `┌────『 ⚠️ ADMIN DOWN 』────┐\n` +
-                `│ ${user} has been *demoted*\n` +
-                `│ Better luck next time, commander.\n` +
-                `└───────────┘`,
+                `┌──『 ⚠️ ADMIN DOWN 』─┐\n` +
+                ` ${user} has been *demoted*\n` +
+                ` Better luck next time, commander.\n` +,
             ],
             promote: [
-                `┏━━━━『 👑 NEW ADMIN 』━━━━┓\n` +
-                `┃ 🎉 ${user} just leveled up!\n` +
-                `┃ 🔧 Welcome to the control panel.\n` +
-                `┗━━━━━━━━━━━━━━━━┛`,
+                `┏━━『 👑 NEW ADMIN 』━━┓\n` +
+                ` 🎉 ${user} just leveled up!\n` +
+                ` 🔧 Welcome to the control panel.`,
             ],
         };
 
