@@ -4,3 +4,69 @@ logs
 .env
 yarn.lock
 package-lock.json
+
+
+
+
+const YT = require('../../lib/YT3');
+const yts = require('yt-search');
+
+module.exports = {
+    name: 'testing',
+    aliases: ['d'],
+    category: 'media',
+    react: "✅",
+    usage: 'Use :ytaudio <song_link>',
+    description: 'Downloads given YouTube Video and sends it as Audio',
+    async execute(client, arg, M) {
+        try {
+            const link = async (term) => {
+                const { videos } = await yts(term.trim());
+                if (!videos || !videos.length) return null;
+                return videos[0];
+            };
+
+            if (!arg) return M.reply('Please use this command with a valid YouTube link');
+            const linkData = await link(arg);
+            const validPathDomains = /^https?:\/\/(youtu\.be\/|(www\.)?youtube\.com\/(embed|v|shorts)\/)/;
+            const term = validPathDomains.test(arg) ? arg.trim() : linkData?.url;
+            if (!term) return M.reply('Please use this command with a valid YouTube content link');
+
+            M.reply(`🔊 Downloading: ${linkData?.title}`);
+
+            // Check if the video is longer than 30 minutes
+            if (Number(linkData.seconds) > 1800) return M.reply('❌ Cannot download audio longer than 30 minutes');
+
+            // Downloading and sending the audio
+            const yt = await YT.ytmp3(term);
+
+            if (!yt.status) {
+                return M.reply(`❌ Failed to download audio:\n${yt.error || 'Unknown error'}`);
+            }
+
+            await client.sendMessage(
+                M.from,
+                {
+                    audio: yt.buffer,
+                    mimetype: 'audio/mpeg',
+                    ptt: false,
+                    contextInfo: {
+                        externalAdReply: {
+                            title: yt.title || linkData.title,
+                            body: "🎶 YouTube Audio",
+                            thumbnail: yt.thumbnail || null,
+                            mediaType: 2,
+                            mediaUrl: term,
+                            sourceUrl: term,
+                            renderLargerThumbnail: true
+                        }
+                    }
+                },
+                { quoted: M }
+            );
+        } catch (error) {
+            console.error(error);
+            M.reply('❌ An error occurred while downloading the YouTube video audio.');
+        }
+    }
+};
