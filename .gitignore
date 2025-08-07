@@ -145,3 +145,62 @@ module.exports = {
         }
     }
 };
+
+
+
+
+
+const YT = require('../../lib/YT3');
+const yts = require('yt-search');
+const axios = require('axios');
+
+module.exports = {
+    name: 'ytvideo',
+    aliases: ['ytv', 'video'],
+    category: 'media',
+    react: "📽️",
+    usage: 'Use :ytvideo <YouTube link or song name>',
+    description: 'Downloads a YouTube video (max 30 min) and sends it',
+    async execute(client, arg, M) {
+        try {
+            if (!arg) return M.reply('❗ Please provide a YouTube link or search term.');
+
+            const search = async (term) => {
+                const { videos } = await yts(term.trim());
+                return videos && videos.length ? videos[0] : null;
+            };
+
+            const validYT = /^https?:\/\/(youtu\.be\/|(www\.)?youtube\.com\/(embed|v|shorts|watch)\b)/;
+            const isLink = validYT.test(arg.trim());
+            const linkData = isLink ? null : await search(arg);
+            const url = isLink ? arg.trim() : linkData?.url;
+
+            if (!url) return M.reply('❗ Could not find a valid YouTube video.');
+
+            const info = isLink ? await search(url) : linkData;
+            if (!info) return M.reply('❗ Could not retrieve video details.');
+
+            if (Number(info.seconds) > 1800)
+                return M.reply('❌ Cannot download videos longer than 30 minutes.');
+
+            M.reply(`📥 Downloading: *${info.title}*\nBy: *${info.author.name}*`);
+
+            const yt = await YT.ytmp4(url);
+            if (!yt.status) return M.reply(`❌ Video download failed:\n${yt.error || 'Unknown error'}`);
+
+            await client.sendMessage(
+                M.from,
+                {
+                    video: yt.buffer,
+                    mimetype: 'video/mp4',
+                    fileName: `${yt.title}.mp4`,
+                    caption: `🎬 *${yt.title}*\n📺 ${info.author.name}\n🔗 ${url}`
+                },
+                { quoted: M }
+            );
+        } catch (error) {
+            console.error(error);
+            M.reply('❌ An error occurred while downloading the YouTube video.');
+        }
+    }
+};
