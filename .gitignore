@@ -70,3 +70,78 @@ module.exports = {
         }
     }
 };
+
+
+
+
+
+
+const YT = require('../../lib/YT3');
+const yts = require('yt-search');
+const axios = require('axios');
+
+module.exports = {
+    name: 'testing',
+    aliases: ['d'],
+    category: 'media',
+    react: "✅",
+    usage: 'Use :ytaudio <song_link or name>',
+    description: 'Downloads given YouTube Video and sends it as Audio with thumbnail & link',
+    async execute(client, arg, M) {
+        try {
+            if (!arg) return M.reply('❗ Please use this command with a YouTube link or song name.');
+
+            const search = async (term) => {
+                const { videos } = await yts(term.trim());
+                return videos && videos.length ? videos[0] : null;
+            };
+
+            const validYT = /^https?:\/\/(youtu\.be\/|(www\.)?youtube\.com\/(embed|v|shorts|watch)\b)/;
+            const isLink = validYT.test(arg.trim());
+            const linkData = isLink ? null : await search(arg);
+            const url = isLink ? arg.trim() : linkData?.url;
+
+            if (!url) return M.reply('❗ Failed to find or parse a valid YouTube link.');
+
+            const info = isLink ? await search(url) : linkData;
+            if (!info) return M.reply('❗ Could not retrieve video details.');
+
+            M.reply(`🎵 Downloading: *${info.title}*\nBy: *${info.author.name}*`);
+
+            if (Number(info.seconds) > 1800)
+                return M.reply('❌ Cannot download audio longer than 30 minutes.');
+
+            const yt = await YT.ytmp3(url);
+            if (!yt.status) return M.reply(`❌ Audio download failed:\n${yt.error || 'Unknown error'}`);
+
+            // Fetch the thumbnail as a buffer
+            const thumbBuffer = yt.thumbnail
+                ? (await axios.get(yt.thumbnail, { responseType: 'arraybuffer' })).data
+                : null;
+
+            await client.sendMessage(
+                M.from,
+                {
+                    audio: yt.buffer,
+                    mimetype: 'audio/mpeg',
+                    ptt: false,
+                    contextInfo: {
+                        externalAdReply: {
+                            title: yt.title || info.title,
+                            body: info.author.name || "YouTube Music",
+                            thumbnail: thumbBuffer,
+                            mediaType: 2,
+                            mediaUrl: url,
+                            sourceUrl: url,
+                            renderLargerThumbnail: true
+                        }
+                    }
+                },
+                { quoted: M }
+            );
+        } catch (error) {
+            console.error(error);
+            M.reply('❌ An unexpected error occurred while downloading the YouTube audio.');
+        }
+    }
+};
